@@ -410,8 +410,8 @@ public class OracleConnectorConfig extends HistorizedRelationalDatabaseConnector
     public OracleConnectorConfig(Configuration config) {
         super(OracleConnector.class, config, config.getString(SERVER_NAME), new SystemTablesPredicate(config), x -> x.schema() + "." + x.table(), true,
                 ColumnFilterMode.SCHEMA);
-
-        this.databaseName = toUpperCase(config.getString(DATABASE_NAME));
+        // this.databaseName = toUpperCase(config.getString(DATABASE_NAME));
+        this.databaseName = config.getString(DATABASE_NAME);
         this.pdbName = toUpperCase(config.getString(PDB_NAME));
         this.xoutServerName = config.getString(XSTREAM_SERVER_NAME);
         this.snapshotMode = SnapshotMode.parse(config.getString(SNAPSHOT_MODE));

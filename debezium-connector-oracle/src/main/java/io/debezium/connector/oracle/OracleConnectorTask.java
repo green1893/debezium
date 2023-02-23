@@ -87,7 +87,7 @@ public class OracleConnectorTask extends BaseSourceTask<OracleOffsetContext> {
                 DataChangeEvent::new,
                 metadataProvider,
                 schemaNameAdjuster);
-
+        // 实时处理控制参数（scn、batch、sleep）
         final OracleStreamingChangeEventSourceMetrics streamingMetrics = new OracleStreamingChangeEventSourceMetrics(taskContext, queue, metadataProvider,
                 connectorConfig);
 
@@ -96,7 +96,9 @@ public class OracleConnectorTask extends BaseSourceTask<OracleOffsetContext> {
                 errorHandler,
                 OracleConnector.class,
                 connectorConfig,
+                // 变化数据处理
                 new OracleChangeEventSourceFactory(connectorConfig, jdbcConnection, errorHandler, dispatcher, clock, schema, jdbcConfig, taskContext, streamingMetrics),
+                // 步长变化处理
                 new OracleChangeEventSourceMetricsFactory(streamingMetrics),
                 dispatcher,
                 schema);

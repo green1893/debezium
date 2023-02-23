@@ -137,6 +137,8 @@ public class LogMinerHelper {
                 : connection.getCurrentScn();
         streamingMetrics.setCurrentScn(currentScn);
 
+        LOGGER.info(">>> try to find end scn, start scn: {}, current scn: {}, batch size: {}", startScn.longValue(), currentScn.longValue(),
+                streamingMetrics.getBatchSize());
         Scn topScnToMine = startScn.add(Scn.valueOf(streamingMetrics.getBatchSize()));
 
         // adjust batch size

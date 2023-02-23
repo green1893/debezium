@@ -184,7 +184,8 @@
                 <dependency>
                     <groupId>com.oracle.instantclient</groupId>
                     <artifactId>xstreams</artifactId>
-                    <scope>provided</scope>
+                    <systemPath>/Users/green/DevOps/build/maven/xstreams.jar</systemPath>
+                    <scope>system</scope>
                 </dependency>
             </dependencies>
         </profile>
