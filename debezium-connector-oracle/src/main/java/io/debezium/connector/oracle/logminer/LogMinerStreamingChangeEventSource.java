@@ -5,21 +5,7 @@
  */
 package io.debezium.connector.oracle.logminer;
 
-import static io.debezium.connector.oracle.logminer.LogMinerHelper.buildDataDictionary;
-import static io.debezium.connector.oracle.logminer.LogMinerHelper.checkSupplementalLogging;
-import static io.debezium.connector.oracle.logminer.LogMinerHelper.createFlushTable;
-import static io.debezium.connector.oracle.logminer.LogMinerHelper.endMining;
-import static io.debezium.connector.oracle.logminer.LogMinerHelper.flushLogWriter;
-import static io.debezium.connector.oracle.logminer.LogMinerHelper.getCurrentRedoLogFiles;
-import static io.debezium.connector.oracle.logminer.LogMinerHelper.getEndScn;
-import static io.debezium.connector.oracle.logminer.LogMinerHelper.getFirstOnlineLogScn;
-import static io.debezium.connector.oracle.logminer.LogMinerHelper.getLastScnToAbandon;
-import static io.debezium.connector.oracle.logminer.LogMinerHelper.getSystime;
-import static io.debezium.connector.oracle.logminer.LogMinerHelper.instantiateFlushConnections;
-import static io.debezium.connector.oracle.logminer.LogMinerHelper.logError;
-import static io.debezium.connector.oracle.logminer.LogMinerHelper.setLogFilesForMining;
-import static io.debezium.connector.oracle.logminer.LogMinerHelper.setNlsSessionParameters;
-import static io.debezium.connector.oracle.logminer.LogMinerHelper.startLogMining;
+import static io.debezium.connector.oracle.logminer.LogMinerHelper.*;
 
 import java.math.BigInteger;
 import java.sql.PreparedStatement;
@@ -27,13 +13,7 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
@@ -41,12 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import io.debezium.DebeziumException;
 import io.debezium.config.Configuration;
-import io.debezium.connector.oracle.OracleConnection;
-import io.debezium.connector.oracle.OracleConnectorConfig;
-import io.debezium.connector.oracle.OracleDatabaseSchema;
-import io.debezium.connector.oracle.OracleOffsetContext;
-import io.debezium.connector.oracle.OracleStreamingChangeEventSourceMetrics;
-import io.debezium.connector.oracle.Scn;
+import io.debezium.connector.oracle.*;
 import io.debezium.jdbc.JdbcConfiguration;
 import io.debezium.pipeline.ErrorHandler;
 import io.debezium.pipeline.EventDispatcher;
@@ -206,9 +181,15 @@ public class LogMinerStreamingChangeEventSource implements StreamingChangeEventS
                                     startScn = transactionalBuffer.updateOffsetContext(offsetContext, dispatcher);
                                 }
                                 else {
-
                                     final Scn lastProcessedScn = processor.getLastProcessedScn();
-                                    if (!lastProcessedScn.isNull() && lastProcessedScn.compareTo(endScn) < 0) {
+                                    // lastProcessedScn.compareTo(startScn) > 0
+                                    // if no redo log need to process, reset lastProcessedScn to null, jump to next range scan
+                                    if (lastProcessedScn.compareTo(startScn) == 0) {
+                                        LOGGER.info("scn records result is empty, jump to next range of scn scan.");
+                                    }
+                                    if (!lastProcessedScn.isNull()
+                                            && lastProcessedScn.compareTo(startScn) > 0
+                                            && lastProcessedScn.compareTo(endScn) < 0) {
                                         // If the last processed SCN is before the endScn we need to use the last processed SCN as the
                                         // next starting point as the LGWR buffer didn't flush all entries from memory to disk yet.
                                         endScn = lastProcessedScn;
